@@ -257,6 +257,168 @@ def global_mean_request():
     return jsonify({"status" : "submitted",
                     "job_id": job_id})
 
+@webserver.route('/api/diff_from_mean', methods=['POST'])
+def diff_from_mean_request():
+    """
+    Endpoint to get the difference from the global mean for a specific question.
+    """
+
+    # Check if the server is shutting down
+    if webserver.tasks_runner.shutting_down:
+        webserver.logger.info("Rejected diff_from_mean - shutting down")
+        return jsonify({"status": "error",
+                        "reason": "shutting down"})
+
+    req = request.json
+    print(f"Got request {req}")
+
+    # Get question
+    question = req.get("question")
+
+    webserver.logger.info("Received /diff_from_mean - question: %s", question)
+
+    # Register job
+    job_id = webserver.job_counter
+    webserver.logger.info("Assigned job_id %s for diff_from_mean", job_id)
+    webserver.job_counter += 1
+
+    # Get job function
+    def job_func():
+        return webserver.data_ingestor.diff_from_mean(question)
+
+    # Submit job
+    webserver.tasks_runner.submit_job(job_id, job_func)
+
+    return jsonify({"status" : "submitted",
+                    "job_id": job_id})
+
+@webserver.route('/api/state_diff_from_mean', methods=['POST'])
+def state_diff_from_mean_request():
+    """"
+    Endpoint to get the difference from the global mean for a specific question for a specific state."
+    """
+
+    # Check if the server is shutting down
+    if webserver.tasks_runner.shutting_down:
+        webserver.logger.info("Rejected state_diff_from_mean - shutting down")
+        return jsonify({"status": "error",
+                        "reason": "shutting down"})
+
+    req = request.json
+    print(f"Got request {req}")
+
+    # Get question
+    question = req.get("question")
+
+    # Get state
+    state = req.get("state")
+
+    webserver.logger.info("Received /state_diff_from_mean - question: %s, state: %s", question, state)
+
+    # Register job
+    job_id = webserver.job_counter
+    webserver.logger.info("Assigned job_id %s for state_diff_from_mean", job_id)
+    webserver.job_counter += 1
+
+    # Get job function
+    def job_func():
+        return webserver.data_ingestor.state_diff_from_mean(question, state)
+
+    # Submit job
+    webserver.tasks_runner.submit_job(job_id, job_func)
+
+    return jsonify({"status" : "submitted",
+                    "job_id": job_id})
+
+@webserver.route('/api/mean_by_category', methods=['POST'])
+def mean_by_category_request():
+    """
+    "Endpoint to get the mean by category for a specific question.""
+    """
+
+    # Check if the server is shutting down
+    if webserver.tasks_runner.shutting_down:
+        webserver.logger.info("Rejected mean_by_category - shutting down")
+        return jsonify({"status": "error",
+                        "reason": "shutting down"})
+
+    req = request.json
+    print(f"Got request {req}")
+
+    # Get question
+    question = req.get("question")
+
+    webserver.logger.info("Received /mean_by_category - question: %s", question)
+
+    # Register job
+    job_id = webserver.job_counter
+    webserver.logger.info("Assigned job_id %s for mean_by_category", job_id)
+    webserver.job_counter += 1
+
+    # Get job function
+    def job_func():
+        return webserver.data_ingestor.mean_by_category(question)
+
+    # Submit job
+    webserver.tasks_runner.submit_job(job_id, job_func)
+
+    return jsonify({"status" : "submitted",
+                    "job_id": job_id})
+
+@webserver.route('/api/state_mean_by_category', methods=['POST'])
+def state_mean_by_category_request():
+    """
+    Endpoint to get the mean by category for a specific question for a specific state.
+    """
+    # Check if the server is shutting down
+    if webserver.tasks_runner.shutting_down:
+        webserver.logger.info("Rejected state_mean_by_category - shutting down")
+        return jsonify({"status": "error",
+                        "reason": "shutting down"})
+
+    req = request.json
+    print(f"Got request {req}")
+
+    # Get question
+    question = req.get("question")
+
+    # Get state
+    state = req.get("state")
+
+    webserver.logger.info("Received /state_mean_by_category - question: %s, state: %s", question, state)
+
+    # Register job
+    job_id = webserver.job_counter
+    webserver.logger.info("Assigned job_id %s for state_mean_by_category", job_id)
+    webserver.job_counter += 1
+
+    # Get job function
+    def job_func():
+        return webserver.data_ingestor.state_mean_by_category(question, state)
+
+    # Submit job
+    webserver.tasks_runner.submit_job(job_id, job_func)
+
+    return jsonify({"status" : "submitted",
+                    "job_id": job_id})
+
+@webserver.route('/api/graceful_shutdown', methods=['GET'])
+def graceful_shutdown():
+    """"
+    Endpoint to initiate a graceful shutdown of the server."
+    """
+    # Check if there are any pending jobs
+    if webserver.tasks_runner.has_pending_jobs():
+
+        webserver.logger.info("Shutdown request received, but jobs are still running.")
+
+        return jsonify({"status": "running"})
+
+    # If no jobs are pending, shutdown can happen
+    webserver.logger.info("Shutdown request received, no jobs are running.")
+    webserver.tasks_runner.shutdown()
+
+    return jsonify({"status": "done"})  # Shutdown complete, no more jobs in the queue
 
 # You can check localhost in your browser to see what this displays
 @webserver.route('/')
